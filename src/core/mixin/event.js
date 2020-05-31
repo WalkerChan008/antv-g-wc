@@ -86,49 +86,59 @@ module.exports = {
       shape = self.getShape(point.x, point.y);
     }
     if (type === 'mousemove') {
-      if (preShape && preShape !== shape) {
-        self._emitEvent('mouseout', e, point, preShape);
-        self._emitEvent('mouseleave', e, point, preShape);
-        if (dragging) {
-          self._emitEvent('dragleave', e, point, preShape);
-        }
-        // 当 mouseleave 触发时，如果拾取到其他 shape 的 mouseenter ，鼠标样式会正常
-        // 当鼠标移出 shape 但是移动到画布上时，没有shape，就不恢复样式。这里判断一下，直接重置
-        if (!shape || shape.destroyed) {
-          el.style.cursor = 'default';
+      let flag = true;
+      if(!Util.isEmpty(mousedownOffset)) {
+        const dx = mousedownOffset.x - e.clientX;
+        const dy = mousedownOffset.y - e.clientY;
+        if(dx === 0 && dy === 0) {
+          flag = false;
         }
       }
-      if (dragging) {
-        self._emitEvent('drag', e, point, dragging);
-        /**
-         * H5原生事件中drag同时不会触发mousemove
-         * 但是在上层具有嵌套关系的item事件计算中需要用到drag时的mousemove
-         * 才能计算dragenter etc.
-         */
-        self._emitEvent('mousemove', e, point, shape);
-      }
-      if (shape) {
-        if (!dragging) {
-          if (mousedownShape === shape) {
-            dragging = shape;
-            mousedownShape = null;
-            this._emitEvent('dragstart', e, point, shape);
-          } else {
-            self._emitEvent('mousemove', e, point, shape);
-          }
-        }
-        if (preShape !== shape) {
-          self._emitEvent('mouseenter', e, point, shape);
-          self._emitEvent('mouseover', e, point, shape);
+      if(flag) {
+        if (preShape && preShape !== shape) {
+          self._emitEvent('mouseout', e, point, preShape);
+          self._emitEvent('mouseleave', e, point, preShape);
           if (dragging) {
-            self._emitEvent('dragenter', e, point, shape);
+            self._emitEvent('dragleave', e, point, preShape);
+          }
+          // 当 mouseleave 触发时，如果拾取到其他 shape 的 mouseenter ，鼠标样式会正常
+          // 当鼠标移出 shape 但是移动到画布上时，没有shape，就不恢复样式。这里判断一下，直接重置
+          if (!shape || shape.destroyed) {
+            el.style.cursor = 'default';
           }
         }
-      } else {
-        const canvasmousemove = self._getEventObj('mousemove', e, point, self);
-        self.emit('mousemove', canvasmousemove);
+        if (dragging) {
+          self._emitEvent('drag', e, point, dragging);
+          /**
+           * H5原生事件中drag同时不会触发mousemove
+           * 但是在上层具有嵌套关系的item事件计算中需要用到drag时的mousemove
+           * 才能计算dragenter etc.
+           */
+          self._emitEvent('mousemove', e, point, shape);
+        }
+        if (shape) {
+          if (!dragging) {
+            if (mousedownShape === shape) {
+              dragging = shape;
+              mousedownShape = null;
+              this._emitEvent('dragstart', e, point, shape);
+            } else {
+              self._emitEvent('mousemove', e, point, shape);
+            }
+          }
+          if (preShape !== shape) {
+            self._emitEvent('mouseenter', e, point, shape);
+            self._emitEvent('mouseover', e, point, shape);
+            if (dragging) {
+              self._emitEvent('dragenter', e, point, shape);
+            }
+          }
+        } else {
+          const canvasmousemove = self._getEventObj('mousemove', e, point, self);
+          self.emit('mousemove', canvasmousemove);
+        }
+        preShape = shape;
       }
-      preShape = shape;
     } else {
       this._emitEvent(type, e, point, shape || this);
       // e.button === 0 保证按下左键，防止点击右键触发click
@@ -152,6 +162,7 @@ module.exports = {
           this._emitEvent('drop', e, point, shape || this);
         }
         mousedownShape = null;
+        mousedownOffset = {};
       }
     }
     if (shape && !shape.get('destroyed')) {
