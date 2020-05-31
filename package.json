@@ -34,7 +34,7 @@
     "eslint-config-egg": "~4.2.0",
     "event-simulate": "~1.0.0",
     "istanbul": "~0.4.5",
-    "jquery": "~3.3.1",
+    "jquery": "~3.5.1",
     "lebab": "^2.7.7",
     "pre-commit": "~1.2.2",
     "shelljs": "~0.7.8",
